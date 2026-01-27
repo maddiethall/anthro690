@@ -1,9 +1,23 @@
 library(readxl)
 library(dplyr)
 library(ggplot2)
-
+library(tidyr)
 
 ### CHAPTER 2 EXERCISES
+
+## Question 2
+
+ethnic_data = c(30, 22, 11)
+ethnic_data = data.frame(ethnic_data)
+ethnic_data = ethnic_data %>%
+  mutate(names = c("Thai", "Chinese", "Laotian"))
+mean(ethnic_data$ethnic_data)
+sd(ethnic_data$ethnic_data)
+var(ethnic_data$ethnic_data)
+barplot(ethnic_data$ethnic_data,
+        main = "Ethnic Group Frequencies",
+        xlab = "Thai            Chinese          Laotian",
+        ylab = "Frequency")
 
 ## QUESTION 3a
 
@@ -33,6 +47,35 @@ desc_stats = infant_birth_weight %>%
       )))
 View(desc_stats)   
 
+desc_stats_df <- infant_birth_weight %>%
+  summarise(
+    across(
+      c(infant_weight, maternal_weight, systolic_bp, diastolic_bp),
+      list(
+        mean = ~mean(.x, na.rm = TRUE),
+        median = ~median(.x, na.rm = TRUE),
+        mode = ~{
+          ux = unique(.x)
+          ux[which.max(tabulate(match(.x, ux)))]
+        },
+        range = ~diff(range(.x, na.rm = TRUE)),
+        variance = ~var(.x, na.rm = TRUE),
+        sd = ~sd(.x, na.rm = TRUE)
+      )
+    )
+  ) %>%
+  pivot_longer(
+    everything(),
+    names_to = c("variable", "stat"),
+    names_pattern = "^(.*)_(mean|median|mode|range|variance|sd)$",
+    values_to = "value"
+  ) %>%
+  pivot_wider(
+    names_from = stat,
+    values_from = value
+  )
+
+desc_stats_df
 
 ## QUESTION 3b
 
@@ -53,6 +96,39 @@ by_smoking = infant_birth_weight %>%
                      sd = ~sd(.x, na.rm = TRUE)
                    )))
 View(by_smoking) 
+
+by_smoking_df <- infant_birth_weight %>%
+  group_by(smoking) %>%
+  summarise(
+    across(
+      c(infant_weight, maternal_weight, systolic_bp, diastolic_bp),
+      list(
+        mean = ~mean(.x, na.rm = TRUE),
+        median = ~median(.x, na.rm = TRUE),
+        mode = ~{
+          ux = unique(.x)
+          ux[which.max(tabulate(match(.x, ux)))]
+        },
+        range = ~diff(range(.x, na.rm = TRUE)),
+        variance = ~var(.x, na.rm = TRUE),
+        sd = ~sd(.x, na.rm = TRUE)
+      ),
+      .names = "{.col}_{.fn}"
+    )
+  ) %>%
+  # Convert from wide to long format for clean table
+  pivot_longer(
+    -smoking,
+    names_to = c("variable", "stat"),
+    names_pattern = "^(.*)_(mean|median|mode|range|variance|sd)$",
+    values_to = "value"
+  ) %>%
+  # Spread stats into columns
+  pivot_wider(
+    names_from = stat,
+    values_from = value
+  ) %>%
+  arrange(smoking, variable)
 
 
 ## QUESTION 3c
@@ -121,8 +197,19 @@ desc_stats_snacks = school_snacks %>%
         range = ~diff(range(.x, na.rm = TRUE)),
         variance = ~var(.x, na.rm = TRUE),
         sd = ~sd(.x, na.rm = TRUE)
-      )))
-View(desc_stats_snacks)  
+      )
+    )
+  ) %>%
+  pivot_longer(
+    everything(),
+    names_to = c("variable", "stat"),
+    names_pattern = "^(.*)_(mean|median|mode|range|variance|sd)$",
+    values_to = "value"
+  ) %>%
+  pivot_wider(
+    names_from = stat,
+    values_from = value
+  )
 
 ## QUESTION 4b
 
@@ -144,6 +231,39 @@ by_gender = school_snacks %>%
       )))
 View(by_gender) 
 
+by_gender_df <- school_snacks %>%
+  group_by(gender) %>%
+  summarise(
+    across(
+      c(height, weight),
+      list(
+        mean = ~mean(.x, na.rm = TRUE),
+        median = ~median(.x, na.rm = TRUE),
+        mode = ~{
+          ux = unique(.x)
+          ux[which.max(tabulate(match(.x, ux)))]
+        },
+        range = ~diff(range(.x, na.rm = TRUE)),
+        variance = ~var(.x, na.rm = TRUE),
+        sd = ~sd(.x, na.rm = TRUE)
+      ),
+      .names = "{.col}_{.fn}"
+    )
+  ) %>%
+  # Pivot longer so variables are rows
+  pivot_longer(
+    -gender,
+    names_to = c("variable", "stat"),
+    names_pattern = "^(.*)_(mean|median|mode|range|variance|sd)$",
+    values_to = "value"
+  ) %>%
+  # Pivot wider so stats are columns
+  pivot_wider(
+    names_from = stat,
+    values_from = value
+  ) %>%
+  arrange(gender, variable)
+
 ## QUESTION 4c
 
 by_activity = school_snacks %>%
@@ -161,8 +281,23 @@ by_activity = school_snacks %>%
         range = ~diff(range(.x, na.rm = TRUE)),
         variance = ~var(.x, na.rm = TRUE),
         sd = ~sd(.x, na.rm = TRUE)
-      )))
-View(by_activity) 
+      ),
+      .names = "{.col}_{.fn}"
+    )
+  ) %>%
+  # Pivot longer so variables are rows
+  pivot_longer(
+    -activity,
+    names_to = c("variable", "stat"),
+    names_pattern = "^(.*)_(mean|median|mode|range|variance|sd)$",
+    values_to = "value"
+  ) %>%
+  # Pivot wider so stats are columns
+  pivot_wider(
+    names_from = stat,
+    values_from = value
+  ) %>%
+  arrange(activity, variable)
 
 ## QUESTION 4d
 
@@ -181,8 +316,23 @@ by_snacks = school_snacks %>%
         range = ~diff(range(.x, na.rm = TRUE)),
         variance = ~var(.x, na.rm = TRUE),
         sd = ~sd(.x, na.rm = TRUE)
-      )))
-View(by_snacks) 
+      ),
+      .names = "{.col}_{.fn}"
+    )
+  ) %>%
+  # Pivot longer so variables are rows
+  pivot_longer(
+    -snack_machine,
+    names_to = c("variable", "stat"),
+    names_pattern = "^(.*)_(mean|median|mode|range|variance|sd)$",
+    values_to = "value"
+  ) %>%
+  # Pivot wider so stats are columns
+  pivot_wider(
+    names_from = stat,
+    values_from = value
+  ) %>%
+  arrange(snack_machine, variable)
 
 ## QUESTION 4e
 
@@ -195,6 +345,7 @@ barplot(table(school_snacks$activity),
 ## QUESTION 4f
 
 school_snacks$activity = factor(school_snacks$activity, labels = c("Low", "High"))
+
 
 ggplot(school_snacks, aes(x = weight)) +
   geom_freqpoly(bins = 30, linewidth = 1) +
