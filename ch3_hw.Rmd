@@ -1,0 +1,97 @@
+---
+title: "Chapter 3 Homework"
+author: "Maddie Thall"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(dplyr)
+library(knitr)
+```
+
+**Question 1:**  
+There are different sampling designs used to ensure random sampling, including
+simple random sampling, systematic random sampling, stratified random sampling, 
+and cluster sampling. Random sampling can happen both with and without replacement.
+A researcher may choose not to sample with replacement to maximize the diversity of
+samples.  
+
+**Question 2:**  
+AA: 0.85  
+AS: 0.148    
+SS: 0.0064  
+  
+**Question 3:**  
+
+```{r}
+frequency = c(8, 1, 8, 1, 1, 1, 1)
+labels = c("Hispanic", "Hmong", "African American", "Japanese", "Greek", "Chinese", "Samoan")
+df = data.frame(labels, frequency)
+df = df %>%
+  mutate(
+    percent = frequency / sum(frequency) * 100,
+    expected_80 = frequency / sum(frequency) * 80)
+df = df %>%
+  rename(
+    "Ethnic Group" = labels,
+    "Observed Frequency" = frequency,
+    "Percent (%)" = percent,
+    "Expected Count (n = 80)" = expected_80
+  )
+kable(df, caption = "Probability Distribution of Ethnic Groups with Expected Counts",
+      digits = 2)
+```
+
+
+**Question 4:**
+```{r}
+berries_gathered = c(25, 30, 50, 65, 70, 80, 95)
+intervals = c(1, 1, 1, 2, 2, 1, 1)
+N = sum(intervals)
+lambda = sum(berries_gathered * intervals) / N
+relative_freq = dpois(berries_gathered, lambda)
+absolute_freq = relative_freq * N
+df_poisson = data.frame(
+  Berries_Gathered = berries_gathered,
+  Observed_Frequency = intervals,
+  Relative_Expected = dpois(berries_gathered, lambda),
+  Absolute_Expected = dpois(berries_gathered, lambda) * N
+)
+
+kable(df_poisson, caption = "Observed and Expected Poisson Frequencies for Berry Gathering", digits = 5)
+```
+These data do not follow a Poisson distribution because some of the expected frequencies 
+are extremely small, with many frequencies close to zero. Also, the observed distribution 
+is much more dispersed than expected under Poisson assumptions.  
+  
+  
+**Question 5:**  
+```{r}
+mu = 5
+sigma = 2
+
+p_a = pnorm(1, mean = mu, sd = sigma)
+
+p_b = pnorm(6, mean = mu, sd = sigma) - pnorm(3, mean = mu, sd = sigma)
+
+p_c = pnorm(4, mean = mu, sd = sigma) - pnorm(2, mean = mu, sd = sigma)
+
+p_d = 1 - pnorm(9, mean = mu, sd = sigma)
+
+results = data.frame(
+  Question = c("$\\le 1$ lesion",
+               "3–6 lesions",
+               "2–4 lesions",
+               "$\\ge 9$ lesions"),
+  Probability = round(c(p_a, p_b, p_c, p_d), 3)
+)
+
+kable(results, caption = "Probabilities for Lesion Counts in a Normal Distribution")
+
+```
+
