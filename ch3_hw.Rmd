@@ -94,4 +94,32 @@ results = data.frame(
 kable(results, caption = "Probabilities for Lesion Counts in a Normal Distribution")
 
 ```
+  
+**Question 6:**  
+```{r}
+prob_a = pnorm(135, mean = 150, sd = 10) - pnorm(125, mean = 150, sd = 10)
+prob_b = pnorm(160, mean = 150, sd = 10) - pnorm(140, mean = 150, sd = 10)
 
+n_c1 = 60
+n_c2 = 30
+p_c1 = 1 - pnorm(170, mean = 150, sd = 10/sqrt(n_c1))
+p_c2 = 1 - pnorm(170, mean = 150, sd = 10/sqrt(n_c2))
+
+n_d1 = 70
+n_d2 = 100
+p_d1 = 1 - pnorm(170, mean = 150, sd = 10/sqrt(n_d1))
+p_d2 = 1 - pnorm(170, mean = 150, sd = 10/sqrt(n_d2))
+
+results_q6 <- data.frame(
+  Scenario = c("Individual 125-135",
+               "Individual 140-160",
+               "Sample mean 170, n=60",
+               "Sample mean 170, n=30",
+               "Sample mean 170, n=70",
+               "Sample mean 170, n=100"),
+  Probability = round(c(prob_a, prob_b, p_c1, p_c2, p_d1, p_d2), 6)
+)
+
+kable(results_q6, caption = "Probabilities of Weight in Various Populations")
+
+```
