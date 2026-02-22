@@ -1,0 +1,63 @@
+---
+title: "Problem Set 3"
+author: "Maddie Thall"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+1. Use the dataset called "cranial morphology" for the following: You are going to compare males and females with a t test for a variable of your choice in the dataset.   
+
+a) Consider the assumptions of of the unpaired t test. Test for normality and homoscedasticity. Do any variables violate the assumptions of the unpaired t test? You may use relevant visualizations in this answer.  
+
+b) Run a t test comparing males and females for a variable of your choice and present your result in standard reporting formatting (see APA format statistical reporting format document for examples, this document is posted in first module of course on Canvas). If some assumptions of the model are violated, then please note this and its limiting of your interpretation of the results. In addition to the written results, you must have at least one visualization relevant to your result. 
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+2. If the assumptions of the t test were violated, implement a non-parametric test instead. If the assumptions of the t test were not violated, still run a non-parametric test and compare the results between the two tests.  
+
+a) Report the non-parametric result and interpretation.  
+
+b) What visualization would you present with your Mann-Whitney U test result? The same as for the t test? 
+
+
+```{r}
+
+```
+
+3. Let's shift to ANOVAs: Write down a research project in your field of study in which you might use a model I one-way ANOVA, and a model I two-way ANOVA.  
+  
+4. Use the dataset "Rangia shells in tree levels." Do an ANOVA testing the null hypothesis that mean weight (measured in grams) differs between the three levels. See R resources below for how to run multiple types of ANOVAs in R. After running the test, test the ANOVA's assumptions (instructions for this are also in the resources below). Report your results and interpretation. 
+
+
+```{r}
+
+```
+
+5. Use the dataset "Birth weights in three groups" to do a two-way ANOVA in which the dependent variable is weight (rounded to nearest pound) and the two independent variables are baby's sex and baby's ethnicity. Report your results and interpretation. 
+
+
+```{r}
+
+```
+
+6. There are multiple post-hoc tests available that enable us to determine which sample differs from which after running an ANOVA. Your textbook describes the Scheffe test because it's conservative. What is one other post-hoc test that we can employ? Are there pros and cons to using each of these two options?  
+  
+  
+7. Use the dataset called "depression." A medical anthropologist is interested in comparing the scores of three ethnic groups on a depression screening scale. She suspects that one of the ethnic groups has fewer depressive symptoms and is scoring differently than the others. Use the non-parametric test called the Kruskal-Wallis test to determine if the groups differ in their depression screening scale. Report and interpret your results in writing and one figure. 
+
+
+
+```{r}
+
+```
