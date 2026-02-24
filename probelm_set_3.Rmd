@@ -6,58 +6,138 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(car)
 ```
 
 1. Use the dataset called "cranial morphology" for the following: You are going to compare males and females with a t test for a variable of your choice in the dataset.   
 
 a) Consider the assumptions of of the unpaired t test. Test for normality and homoscedasticity. Do any variables violate the assumptions of the unpaired t test? You may use relevant visualizations in this answer.  
 
+```{r, echo = FALSE}
+cranial_morphology = readxl::read_excel('/Users/maddiethall/R Repos/anthro690/Datasets/Cranial Morphology.xlsx')
+cranial_morphology = cranial_morphology %>%
+  rename(GOL = `GOL (Glabello-Occipital Length)`) %>%
+  drop_na(GOL, Sex)
+```
+
+```{r}
+male = cranial_morphology$GOL[cranial_morphology$Sex == "M"]
+female = cranial_morphology$GOL[cranial_morphology$Sex == "F"]
+
+# checking normality
+shapiro.test(male)
+shapiro.test (female)
+
+boxplot(GOL ~ Sex, data = cranial_morphology, main = "Boxplot of Nasal Height")
+hist(male)
+hist(female)
+
+# checking homoscedasticity
+var.test(GOL ~ Sex, data = cranial_morphology)
+
+```
+
+*Shapiro-Wilk indicated that GOL did not significantly deviate for males, but did indicate deviance for females. Visual inspection, however, showed only a slight deviance from normality for females. Testing homoscasticity with an F test indicated equal variances. Ultimately, assumptions are generally met and we can proceed with a t-test.*    
+    
+  
 b) Run a t test comparing males and females for a variable of your choice and present your result in standard reporting formatting (see APA format statistical reporting format document for examples, this document is posted in first module of course on Canvas). If some assumptions of the model are violated, then please note this and its limiting of your interpretation of the results. In addition to the written results, you must have at least one visualization relevant to your result. 
 
 ```{r}
+t.test(GOL ~ Sex, data = cranial_morphology, var.equal = TRUE)
+aggregate(GOL ~ Sex, data = cranial_morphology,
+          FUN = function(x) c(M = mean(x), SD = sd(x)))
+ggplot(cranial_morphology, aes(x = Sex, y = GOL)) +
+  geom_boxplot() +
+  labs(title = "Glabello-Occipital Length by Sex",
+       x = "Sex", y = "GOL Length")
 
+ggplot(cranial_morphology, aes(x = Sex, y = GOL)) +
+  stat_summary(fun = mean, geom = "point") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2) +
+  labs(title = "Mean GOL with 95% CI by Sex",
+       x = "Sex",
+       y = "GOL") +
+  theme_minimal()
 ```
 
+*An independent-samples t-test was conducted to compare GOL in males and females. Males (M = 178.73, SD = 11.55) had significantly greater GOL than females (M = 173.51, SD = 10.41), t(144) = -2.84, p = 0.005).* 
 
-```{r}
-
-```
 
 2. If the assumptions of the t test were violated, implement a non-parametric test instead. If the assumptions of the t test were not violated, still run a non-parametric test and compare the results between the two tests.  
 
 a) Report the non-parametric result and interpretation.  
+*The Mann-Whitney U test/Wilcoxon rank sum test indicated that GOL is significantly different between males and females (W = 1813.5, p = 0.001).*
 
-b) What visualization would you present with your Mann-Whitney U test result? The same as for the t test? 
-
+b) What visualization would you present with your Mann-Whitney U test result? The same as for the t test?  
+*I would use the same visualizations because they show the distribution of the data rather than the results of the test, so the same visualizations are appropriate for both tests.*
 
 ```{r}
-
+wilcox.test(GOL ~ Sex, data = cranial_morphology, exact = FALSE)
 ```
 
 3. Let's shift to ANOVAs: Write down a research project in your field of study in which you might use a model I one-way ANOVA, and a model I two-way ANOVA.  
+
+*One-way ANOVA: Comparing mean grooming rate between age-sex classes in a primate species. The independent variable would be age-sex class, and the dependent variable would be grooming rate.*  
+*Two-way ANOVA: Comparing mean grooming rate based on age-sex class and dominance rank in a primate species. The independent variables would be age-sex class and dominance rank, and the dependent variable would be grooming rate.*
   
-4. Use the dataset "Rangia shells in tree levels." Do an ANOVA testing the null hypothesis that mean weight (measured in grams) differs between the three levels. See R resources below for how to run multiple types of ANOVAs in R. After running the test, test the ANOVA's assumptions (instructions for this are also in the resources below). Report your results and interpretation. 
+4. Use the dataset "Rangia shells in tree levels." Do an ANOVA testing the null hypothesis that mean weight (measured in grams) differs between the three levels. See R resources below for how to run multiple types of ANOVAs in R. After running the test, test the ANOVA's assumptions (instructions for this are also in the resources below). Report your results and interpretation.  
+  
+*The results of the one-way ANOVA indicate no significant difference in mean weight of Rangia shells between the three levels (p = 0.29). The residuals vs fit plot indicated the presence of outliers that may be affecting the normality and homogeneity of the variance. I was unable to run a Levene's test because I got an error saying "Levene's test is not appropriate with quantitative explanatory variables." The Q-Q plot showed that the residuals generally fall approximately along the reference line, apart from the outliers, allowing us to assume normality. Additionally, a Shapiro-Wilk test found no violation of normality (W = 0.97, p = 0.44). Ultimately, we can interpret from the results that there is no difference between mean weights of the three levels, and therefore, we reject the null hypothesis.*
 
-
-```{r}
-
+```{r, echo = FALSE}
+rangia_shells = readxl::read_excel('/Users/maddiethall/R Repos/anthro690/Datasets/rangia shells in three levels.xls')
 ```
 
-5. Use the dataset "Birth weights in three groups" to do a two-way ANOVA in which the dependent variable is weight (rounded to nearest pound) and the two independent variables are baby's sex and baby's ethnicity. Report your results and interpretation. 
+```{r}
+rangia.aov = aov(weight ~ level, data = rangia_shells)
+summary(rangia.aov)
 
+# Homogeneity of variances
+plot(rangia.aov, 1)
+
+# Normality
+plot(rangia.aov, 2)
+aov_residuals = residuals(object = rangia.aov)
+shapiro.test(aov_residuals)
+```
+
+5. Use the dataset "Birth weights in three groups" to do a two-way ANOVA in which the dependent variable is weight (rounded to nearest pound) and the two independent variables are baby's sex and baby's ethnicity. Report your results and interpretation.  
+
+*The results of the two-way ANOVA indicate that group (ethnicity) is a significant predictor weight (F = 33.88, p < 0.001), but not sex (F = 0.35, p = 0.56).*
+
+```{r, echo = FALSE}
+birth_weights = readxl::read_excel('/Users/maddiethall/R Repos/anthro690/Datasets/birth weights in three groups.xlsx')
+```
 
 ```{r}
-
+birthweight_aov = aov(Weight ~ Sex + Group, data = birth_weights)
+summary(birthweight_aov)
 ```
 
 6. There are multiple post-hoc tests available that enable us to determine which sample differs from which after running an ANOVA. Your textbook describes the Scheffe test because it's conservative. What is one other post-hoc test that we can employ? Are there pros and cons to using each of these two options?  
+
+*Another post-hoc test that we can use is the Tukey HSD test. The Scheffe test is more conservative than the Tukey HSD test, but it also has a lower power to detect true differences between groups. The Tukey HSD test is less conservative (higher chance of making a Type I error) but it has a higher power to detect true differences between groups. The choice between these two tests comes down to weighing the importance of power vs error, which depends on the researcher's priorities and the specific context of the study.*
   
   
-7. Use the dataset called "depression." A medical anthropologist is interested in comparing the scores of three ethnic groups on a depression screening scale. She suspects that one of the ethnic groups has fewer depressive symptoms and is scoring differently than the others. Use the non-parametric test called the Kruskal-Wallis test to determine if the groups differ in their depression screening scale. Report and interpret your results in writing and one figure. 
+7. Use the dataset called "depression." A medical anthropologist is interested in comparing the scores of three ethnic groups on a depression screening scale. She suspects that one of the ethnic groups has fewer depressive symptoms and is scoring differently than the others. Use the non-parametric test called the Kruskal-Wallis test to determine if the groups differ in their depression screening scale. Report and interpret your results in writing and one figure.   
 
+*The results of the Kruskal-Wallis test indicate a significant difference between ethnic groups in their score on a depression screening scale (chi-squared = 6.14, df = 2, p = 0.046).*
 
+```{r, echo = FALSE}
+depression = readxl::read_excel('/Users/maddiethall/R Repos/anthro690/Datasets/depression.xls')
+
+groups = as.factor(depression$group)
+```
 
 ```{r}
-
+kruskal.test(score ~ group, data = depression)
+ggplot(depression, aes(x = groups, y = score, group = groups, fill = groups)) +
+  geom_boxplot() +
+  labs(title = "Depression Screening Scores by Ethnic Group",
+       x = "Ethnic Group",
+       y = "Screening Score")
 ```
