@@ -1,0 +1,80 @@
+---
+title: "Problem Set 4"
+author: "Maddie Thall"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(bayestestR)
+library(dplyr)
+library(tidyr)
+library(BayesFactor)
+library(DescTools)
+```
+
+1. Use the dataset called "cranial morphology" for the following : You are going to compare males and females with a Bayesian comparison of means for a variable of your choice in the dataset. 
+```{r, echo = FALSE}
+cranial_morphology = readxl::read_excel('/Users/maddiethall/R Repos/anthro690/Datasets/Cranial Morphology.xlsx')
+cranial_morphology = cranial_morphology %>%
+  rename(GOL = `GOL (Glabello-Occipital Length)`) %>%
+  drop_na(GOL, Sex)
+```
+a) Run a "Bayesian t-test" comparing males and females for the variable you chose last week for the "cranial morphology" dataset. 
+b) Compare the classic t-test result from last week to the result you get with this "Bayesian t-test." How are these results different in approach and would you frame or explain the result differently to your audience?
+
+```{r, warning=FALSE}
+result = ttestBF(formula = GOL ~ Sex, data = cranial_morphology)
+describe_posterior(result)
+```
+
+*The classic t-test indicates a significant difference in GOL between males and females, with males having a greater GOL than females (t(144) = -2.84, p = 0.005). The 95% confidence interval for this test ranges from -8.86 to -1.59. The Bayesian t-test indicates moderate evidence for a sex difference (BF = 6.69), along with the 99.83% chance that the probability difference is not zero. The 95% credible interval [-8.41, -1.26] is very close to the classic t-test CI. Both approaches reach the same conclusion: males have a larger GOL than females. In terms of framing results, the frequentist t-test emphasizes statistical significance and rejecting (or failing to reject) the null hypothesis. The Bayesian t-test is not interpreted in the binary, but rather, is graded. Instead of testing whether data are unlikely under the null hypothesis, the Bayesian t-test compares how well the null and alternative hypotheses predict the data and provides measures of strength of evidence (Bayes Factor) and the probability of the effect.*
+
+2. Use the dataset "Birth weights in three groups" in which the dependent variable is weight (rounded to nearest pound) and the two independent variables are baby's sex and baby's ethnicity:
+```{r, echo = FALSE}
+birth_weights = readxl::read_excel('/Users/maddiethall/R Repos/anthro690/Datasets/birth weights in three groups.xlsx')
+birth_weights$Sex = as.factor(birth_weights$Sex)
+birth_weights$Group = as.factor(birth_weights$Group)
+```
+a) Run a "Bayesian two-way ANOVA" using the function anovaBF in the R package bayestestR 
+b) Compare the classic two-way ANOVA result from last week and the result that you get with the "Bayesian two-way ANOVA." How are these results different in approach would you frame or explain the result differently to your audience?
+
+```{r,warning=FALSE}
+anovaBF(Weight ~ Sex + Group, data = birth_weights)
+```
+
+*The results of the classic two-way ANOVA indicate that group (ethnicity) is a significant predictor of weight (F = 33.88, p < 0.001), sex is not (F = 0.35, p = 0.56). The interpretation/framing of these results is very straightforward: Birth weight across ethnicity, but not between sexes. The Bayesian ANOVA compares models, and the BF indicates how likely the model is compared to the intercept-only model. For group/ethnicity, the BF indicates the data are 33,802 times more likely under a model including group than under a model with no predictors, which is very strong evidence that supports the classic ANOVA results. The Bayesian ANOVA also matches the classic ANOVA with the BF for sex (0.29), which is evidence that sex does not matter. The difference is that the frequentist framework only lets us fail to reject the null hypothesis for sex, but the Bayesian framework provides evidence that supports the null hypothesis for sex (Bayesian ANOVA can provide evidence supporting the null, while frequentist ANOVA cannot). It also shows that adding sex or its interaction with group to the model worsens model fit. So, while both tests ultimately agree on the effects of grosup and sex on weight, the Bayesian ANOVA provides more robust evidence.*
+
+
+3. An anthropologist is working with a horticultual group and wishes to determine if the group's meat consumption differs seasonally. The research records the number of large animals consumed (shared) by the entire community during the rainy and dry seasons. Test the hypothesis that the frequency of animals consumed does not differ seasonally. Perform a chi-square test and a test that Madrigal refers to as a G test, which is also known as a log-likelihood ratio test (a special kind of likelihood ratio test).
+
+```{r}
+animals = c(40, 70)
+chisq.test(animals, p = c(0.5, 0.5))
+
+GTest(animals, p = c(0.5, 0.5))
+```
+*The results of the chi-square test indicate a significant difference between the consumption of meat in the wet vs dry season (X-squared = 8.18, p = 0.004). The G test gives a very similar output, supporting the results of the chi-squared test (G = 8.29, p = 0.004).*
+
+4. Use the dataset "seasonal workers." Compute the Pearson and Spearman correlation coefficients for BMI and both blood pressure measures. 
+
+```{r, echo = FALSE}
+seasonal_workers = readxl::read_excel('/Users/maddiethall/R Repos/anthro690/Datasets/seasonal workers.xlsx')
+```
+
+```{r}
+pear.SBP = cor(seasonal_workers$BMI, seasonal_workers$SBP, method = "pearson")
+spear.SBP = cor(seasonal_workers$BMI, seasonal_workers$SBP, method = "spearman")
+pear.DBP = cor(seasonal_workers$BMI, seasonal_workers$DBP, method = "pearson")
+spear.DBP = cor(seasonal_workers$BMI, seasonal_workers$DBP, method = "spearman")
+
+output = data.frame(
+  Measure = c("SBP", "DBP"),
+  Pearson = c(pear.SBP, pear.DBP),
+  Spearman = c(spear.SBP, spear.DBP)
+)
+
+print(output)
+```
+
