@@ -1,0 +1,37 @@
+---
+title: "Problem Set 5"
+author: "Maddie Thall"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+seasonal_workers = readxl::read_excel('/Users/maddiethall/R Repos/anthro690/Datasets/seasonal workers.xlsx')
+```
+
+1. Perform a Bayesian version of a correlation that you performed in last week's problem set: Use the dataset "seasonal workers." Compute the Bayesian version of a correlation for BMI and both blood pressure measures, then compare results to the Pearson and Spearman results you generated last week. This requires that you use a different package in R than last week's Bayesian questions because bayestestR package doesn't handle this well. Instead, to compute a Bayesian correlation test, you will need the BayesFactor package. You then compute the correlation using the correlationBF() function. 
+
+```{r}
+
+```
+
+2. Use the dataset called "women of two religions" and do the following regression analyses. For each regression analysis: first visualize the data, then construct the linear regression model, evaluate the residual plots, check linearity, check homoscedasticity, check independence and check normality of residuals. 
+
+(a) Children produced regressed on height 
+
+```{r}
+
+```
+
+
+(b) Children produced regressed on weight. 
+```{r}
+
+```
+
+3. Use the dataset called "menarche" and regress number of children produced on age at menarche. First visualize the data, then construct the linear regression model, evaluate the residual plots, check linearity, check homoscedasticity, check independence and check normality of residuals. 
+
+```{r}
+
+```
