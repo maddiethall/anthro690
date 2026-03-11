@@ -7,31 +7,243 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(bayestestR)
+library(dplyr)
+library(tidyr)
+library(BayesFactor)
+library(DescTools)
+library(devtools)
+options(rgl.useNULL = TRUE)
+library(predict3d)
+library(psych)
+library(ggplot2)
+library(gtsummary)
+library(nortest)
+library(lmtest)
+library(sandwich)
+library(psych)
+library(gt)
+library(broom.helpers)
+
 seasonal_workers = readxl::read_excel('/Users/maddiethall/R Repos/anthro690/Datasets/seasonal workers.xlsx')
+
+women_religion = readxl::read_excel('/Users/maddiethall/R Repos/anthro690/Datasets/Women of two religions data.xls')
+women_religion = women_religion %>%
+  rename(fertility = `Fertility Rate`,
+         height = `Height (cm)`,
+         weight = `Weight (kg)`)
+
+
+menarche = readxl::read_excel('/Users/maddiethall/R Repos/anthro690/Datasets/Menarche (1).xls')
+menarche = menarche %>%
+  rename(fertility = `Number of Pregnancies`,
+         menarche_age = `Age at Menarche`)
 ```
 
-1. Perform a Bayesian version of a correlation that you performed in last week's problem set: Use the dataset "seasonal workers." Compute the Bayesian version of a correlation for BMI and both blood pressure measures, then compare results to the Pearson and Spearman results you generated last week. This requires that you use a different package in R than last week's Bayesian questions because bayestestR package doesn't handle this well. Instead, to compute a Bayesian correlation test, you will need the BayesFactor package. You then compute the correlation using the correlationBF() function. 
+*1. Perform a Bayesian version of a correlation that you performed in last week's problem set: Use the dataset "seasonal workers." Compute the Bayesian version of a correlation for BMI and both blood pressure measures, then compare results to the Pearson and Spearman results you generated last week. This requires that you use a different package in R than last week's Bayesian questions because bayestestR package doesn't handle this well. Instead, to compute a Bayesian correlation test, you will need the BayesFactor package. You then compute the correlation using the correlationBF() function.* 
+
+### The Bayseian correlation of BMI and SBP yields a median of 0.32, similar to Pearson correlation coefficient, which was 0.35. The Bayes factor, 21.97, provides strong evidence against the null. For BMI and DBP, the Bayesian median is 0.42, similar to the Pearson correlation coefficient, which was 0.46. The Bayes factor, 671.96, provides very strong evidence against the null. Both Bayesian medians were less similar to the Spearman correlation coefficient than the Pearson correlation coefficient, but all correlation coefficients from both the Pearson and Spearman tests call within the 95% credible intervals from the Bayesian correlations.
 
 ```{r}
+result_systolic = correlationBF(seasonal_workers$BMI, seasonal_workers$SBP)
+result_diastolic = correlationBF(seasonal_workers$BMI, seasonal_workers$DBP)
 
+describe_posterior(result_systolic)
+describe_posterior(result_diastolic)
 ```
 
-2. Use the dataset called "women of two religions" and do the following regression analyses. For each regression analysis: first visualize the data, then construct the linear regression model, evaluate the residual plots, check linearity, check homoscedasticity, check independence and check normality of residuals. 
+*2. Use the dataset called "women of two religions" and do the following regression analyses. For each regression analysis: first visualize the data, then construct the linear regression model, evaluate the residual plots, check linearity, check homoscedasticity, check independence and check normality of residuals.* 
 
-(a) Children produced regressed on height 
+```{r, warning=FALSE}
+knitr::kable(
+  describeBy(women_religion) %>% round(2) 
+)
+```
 
-```{r}
+*(a) Children produced regressed on height*  
+  
+### The regression model indicates a significant effect of height on fertility/children produced (Beta = 0.16, p < 0.001). Checking linearity by plotting the regression line shows a straight-line relationship between height and fertility. Plotting the residuals confirms homoscedasticity as there is a uniform distribution across height values. The Durbin-Watson test indicates potential autocorrelation (DW = 1.63, p = 0.03), but the DW plot is randomly scattered, suggesting independence. Finally, the residuals do not appear to be normally distributed based on the Q-Q plot, as well as the Shapriro-Wilk test (W = 0.96, p = 0.005). However, linear models are robust to violations of normality, and we can conclude there is an association between fertility and height based on these results.
 
+```{r, warning=FALSE}
+#visualize the data
+ggplot(women_religion, aes(x = height, y = fertility)) +
+         geom_point() +
+         stat_smooth() +
+  labs(x = "Height (cm)", y = "Fertility", title = "Children Produced regressed on Height")
+
+#construct model
+model_height = lm(fertility ~ height, data = women_religion)
+model_height_tbl <- tbl_regression(model_height, intercept = TRUE)
+as_gt(model_height_tbl) |> 
+              tab_header("Linear regression model output (Fertility ~ Height)") |> 
+              tab_options(table.align='left')
+
+#check linearity
+ggplot(women_religion, aes(x = height, y = fertility)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  theme_minimal() +
+  labs(title ="Linearity: Scatter Plot with Regression Line")
+
+#check homoscedasticity
+residuals_height = resid(model_height)
+fitted_height = fitted(model_height)
+ggplot(women_religion, aes(x = fitted_height, y = residuals_height)) +
+  geom_point() +
+  geom_hline(yintercept = 0, color = "red") +
+  theme_minimal() +
+  labs(title = "Homoscedasticity: Residuals vs Fitted")
+
+#check independence
+dwtest(model_height)
+residuals_height = resid(model_height)
+
+dw_data_height = data.frame(
+  residuals = residuals_height[-1],       
+  lagged_residuals = residuals_height[-length(residuals_height)]
+)
+
+ggplot(dw_data_height, aes(x = lagged_residuals, y = residuals)) +
+  geom_point(color = "blue", size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", color = "red", linetype = "dashed", se = FALSE) +
+  theme_minimal() +
+  ggtitle("Durbin-Watson Plot: Residuals vs Lagged Residuals") +
+  xlab("Lagged Residuals") +
+  ylab("Residuals")
+
+#check normality of residuals
+ggplot(women_religion, aes(sample = residuals_height)) +
+  geom_qq() +
+  geom_qq_line(color = "red") +
+  theme_minimal() +
+  labs(title = "Q-Q Plot of Residuals")
+
+shapiro.test(model_height$residuals)
 ```
 
 
-(b) Children produced regressed on weight. 
-```{r}
+*(b) Children produced regressed on weight*  
+  
+### The regression model indicates a significant effect of weight on fertility/children produced (Beta = 0.38, p < 0.001). Checking linearity by plotting the regression line shows a straight-line relationship between weight and fertility. Plotting the residuals confirms homoscedasticity as there is a uniform distribution across weight values. The Durbin-Watson test indicates potential autocorrelation (DW = 1.65, p = 0.04), but the DW plot is randomly scattered, suggesting independence. Finally, the residuals do not appear to be normally distributed based on the Q-Q plot, as well as the Shapriro-Wilk test (W = 0.96, p = 0.003). However, linear models are robust to violations of normality, and we can conclude there is an association between fertility and weight based on these results. 
 
+```{r, warning=FALSE}
+#visualize the data
+ggplot(women_religion, aes(x = fertility, y = weight)) +
+         geom_point() +
+         stat_smooth() +
+  labs(x = "Weight (kg)", y = "Children Produced", title = "Children Produced regressed on Weight") 
+
+#construct model
+model_weight = lm(fertility ~ weight, data = women_religion)
+model_weight_tbl <- tbl_regression(model_weight, intercept = TRUE)
+as_gt(model_weight_tbl) |> 
+              tab_header("Linear regression model output (Fertility ~ Weight)") |> 
+              tab_options(table.align='left')
+
+#check linearity
+ggplot(women_religion, aes(x = weight, y = fertility)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  theme_minimal() +
+  labs(title ="Linearity: Scatter Plot with Regression Line")
+
+#check homoscedasticity
+residuals_weight = resid(model_weight)
+fitted_weight = fitted(model_weight)
+ggplot(women_religion, aes(x = fitted_weight, y = residuals_weight)) +
+  geom_point() +
+  geom_hline(yintercept = 0, color = "red") +
+  theme_minimal() +
+  labs(title = "Homoscedasticity: Residuals vs Fitted")
+
+#check independence
+dwtest(model_weight)
+residuals_weight = resid(model_weight)
+
+dw_data_weight = data.frame(
+  residuals = residuals_weight[-1],       
+  lagged_residuals = residuals_weight[-length(residuals_weight)]
+)
+
+ggplot(dw_data_weight, aes(x = lagged_residuals, y = residuals)) +
+  geom_point(color = "blue", size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", color = "red", linetype = "dashed", se = FALSE) +
+  theme_minimal() +
+  ggtitle("Durbin-Watson Plot: Residuals vs Lagged Residuals") +
+  xlab("Lagged Residuals") +
+  ylab("Residuals")
+
+#check normality of residuals
+ggplot(women_religion, aes(sample = residuals_weight)) +
+  geom_qq() +
+  geom_qq_line(color = "red") +
+  theme_minimal() +
+  labs(title = "Q-Q Plot of Residuals")
+
+shapiro.test(model_weight$residuals)
 ```
 
-3. Use the dataset called "menarche" and regress number of children produced on age at menarche. First visualize the data, then construct the linear regression model, evaluate the residual plots, check linearity, check homoscedasticity, check independence and check normality of residuals. 
+*3. Use the dataset called "menarche" and regress number of children produced on age at menarche. First visualize the data, then construct the linear regression model, evaluate the residual plots, check linearity, check homoscedasticity, check independence and check normality of residuals.*  
+  
+### The regression model indicates a nonsignificant effect of age at menarche on fertility/children produced (Beta = -0.31, p = 0.13). Checking linearity by plotting the regression line shows a straight-line relationship between weight and fertility. Plotting the residuals confirms homoscedasticity as there is a uniform distribution across weight values. The Durbin-Watson test and plot indicate no autocorrelation (DW = 2.08, p = 0.6). Finally, the residuals do not appear to be normally distributed based on the Q-Q plot, as well as the Shapriro-Wilk test (W = 0.95, p = 0.03). However, linear models are robust to violations of normality, and we can conclude there is no association between fertility and age at menarche based on these results. 
 
-```{r}
+```{r, warning=FALSE}
 
+knitr::kable(
+  describeBy(menarche) %>% round(2))
+
+#visualize the data
+ggplot(menarche, aes(x = menarche_age, y = fertility)) +
+         geom_point() +
+         stat_smooth() +
+  labs(x = "Age at Menarche", y = "Children Produced", title = "Children Produced regressed on Age at Menarche") 
+#construct model
+model_menarche = lm(fertility ~ menarche_age, data = menarche)
+model_menarche_tbl <- tbl_regression(model_menarche, intercept = TRUE)
+as_gt(model_menarche_tbl) |> 
+              tab_header("Linear regression model output (Fertility ~ Age at Menarche)") |> 
+              tab_options(table.align='left')
+
+#check linearity
+ggplot(menarche, aes(x = menarche_age, y = fertility)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "blue") +
+  theme_minimal() +
+  labs(title ="Linearity: Scatter Plot with Regression Line")
+
+#check homoscedasticity
+residuals_menarche = resid(model_menarche)
+fitted_menarche = fitted(model_menarche)
+ggplot(menarche, aes(x = fitted_menarche, y = residuals_menarche)) +
+  geom_point() +
+  geom_hline(yintercept = 0, color = "red") +
+  theme_minimal() +
+  labs(title = "Homoscedasticity: Residuals vs Fitted")
+
+#check independence
+dwtest(model_menarche)
+residuals_menarche = resid(model_menarche)
+
+dw_data_menarche = data.frame(
+  residuals = residuals_menarche[-1],       
+  lagged_residuals = residuals_menarche[-length(residuals_menarche)]
+)
+
+ggplot(dw_data_menarche, aes(x = lagged_residuals, y = residuals)) +
+  geom_point(color = "blue", size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", color = "red", linetype = "dashed", se = FALSE) +
+  theme_minimal() +
+  ggtitle("Durbin-Watson Plot: Residuals vs Lagged Residuals") +
+  xlab("Lagged Residuals") +
+  ylab("Residuals")
+
+#check normality of residuals
+ggplot(menarche, aes(sample = residuals_menarche)) +
+  geom_qq() +
+  geom_qq_line(color = "red") +
+  theme_minimal() +
+  labs(title = "Q-Q Plot of Residuals")
+
+shapiro.test(model_menarche$residuals)
 ```
